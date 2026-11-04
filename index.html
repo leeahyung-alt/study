@@ -292,6 +292,8 @@ body.viewmode .nav{justify-content:flex-start}
 const CFG = Object.assign({SYNC_URL:"", LEARNER_ID:"learner", APP_NAME:"금융시장 분석가 공부방"}, window.ACADEMY_CONFIG || {});
 const D = window.ACADEMY_DATA;
 const VIEW_MODE = /(^|#|&)view\b/.test(location.hash);
+const ADMIN = (() => { const h = location.hash; try{ if(/(^|#|&)noadmin\b/.test(h)) localStorage.removeItem("fa_admin"); else if(/(^|#|&)admin\b/.test(h)) localStorage.setItem("fa_admin", "1"); return localStorage.getItem("fa_admin") === "1"; }catch(e){ return /(^|#|&)admin\b/.test(h); } })();
+window.addEventListener("hashchange", () => { if(/(^|#|&)(no)?admin\b/.test(location.hash)) location.reload(); });
 const DOMAINS = {R:"독해력",V:"어휘·시사 상식",E:"경제·금융 이해력",N:"뉴스 분석력",C:"기업분석·투자 아이디어",M:"주식·비트코인 시장 분석력",W:"논리적 글쓰기·시황 작성"};
 const DOM_ORDER = ["R","V","E","N","C","M","W"];
 const LEVEL_NAMES = ["기초 진단 단계","문장 이해 단계","정보 이해 단계","관계 연결 단계","기초 분석 단계","독립적 분석 단계","종합 분석 단계"];
@@ -4366,7 +4368,7 @@ function viewSettings(){
   <section class="card"><h2>사용 설명서<\/h2><p class="small muted">기능과 공부 순서를 처음부터 자세히 알려 줘요.<\/p><button class="btn small" data-act="go" data-v="guide">사용 설명서 보기<\/button><\/section>
   <section class="card"><h2>보기 설정<\/h2><div class="row"><span>글자 크기<\/span>${[16,18,20,22].map(f => `<button class="btn small ${S.settings.font === f ? "" : "ghost"}" data-act="font" data-f="${f}">${f}<\/button>`).join("")}<\/div>
   <label class="row"><input type="checkbox" data-tts="1" ${S.settings.tts ? "checked" : ""}> 읽어주기 버튼 보이기 (브라우저가 지원할 때)<\/label><\/section>
-  <section class="card"><h2>일차 다시 하기<\/h2><p class="small muted">시험으로 눌러 본 일차가 있으면 그 일차의 기록만 지우고 처음부터 다시 할 수 있어요. 다른 일차 기록은 그대로예요.<\/p><div class="row"><label class="f" for="rdN" style="max-width:8rem">일차<input id="rdN" type="number" min="1" max="${S.day}" value="${S.day}" inputmode="numeric"><\/label><button class="btn small" data-act="resetDay">이 일차 기록 지우기<\/button><\/div><\/section>
+  ${ADMIN ? `<section class="card"><h2>일차 다시 하기 <span class="small muted">(관리자 전용)<\/span><\/h2><p class="small muted">시험으로 눌러 본 일차가 있으면 그 일차의 기록만 지우고 처음부터 다시 할 수 있어요. 다른 일차 기록은 그대로예요.<\/p><div class="row"><label class="f" for="rdN" style="max-width:8rem">일차<input id="rdN" type="number" min="1" max="${S.day}" value="${S.day}" inputmode="numeric"><\/label><button class="btn small" data-act="resetDay">이 일차 기록 지우기<\/button><\/div><\/section>` : ""}
   <section class="card"><h2>학습자<\/h2><p>${esc(S.profile.name)} · 시작 ${fmtDate(isoOf(S.created))} · ${S.day}일차<\/p><button class="btn danger small" data-act="wipe">모든 기록 지우기<\/button><\/section>`;
 }
 function viewReports(){
@@ -4573,7 +4575,7 @@ const ACT = {
   async syncNow(){ const ok = await syncPush(true); toast(ok ? "서버에 저장했어요" : (Sync.err || "저장하지 못했어요")); render(); },
   pinEnter(){ showModal({title:"기록 비밀번호", body:`<label class="f" for="pinRe">비밀번호<input id="pinRe" type="password" inputmode="numeric"><\/label>`, ok:"확인", cancel:"취소", onOk:async () => { const pin = $("#pinRe").value.trim(); const r = await syncAuth(pin); if(r.ok){ await storePut("pin", pin); Store._pinCache = pin; Sync.authed = true; Sync.err = null; syncPush(true); toast("서버와 연결했어요"); } else toast(r.error === "pin" ? "비밀번호가 맞지 않아요" : "서버에 연결하지 못했어요"); render(); }}); },
   copyView(){ copyText(location.href.split("#")[0] + "#view"); },
-  resetDay(){ const n = +(($("#rdN") || {}).value || 0); if(!(n >= 1 && n <= S.day)){ toast(`1~${S.day} 사이 숫자를 넣어 주세요`); return; }
+  resetDay(){ if(!ADMIN) return; const n = +(($("#rdN") || {}).value || 0); if(!(n >= 1 && n <= S.day)){ toast(`1~${S.day} 사이 숫자를 넣어 주세요`); return; }
     showModal({title:`${n}일차 기록 지우기`, body:`<p><b>${n}일차<\/b>에 한 공부(교시 진행, 문제 답, 글, 뉴스·시장 기록, 실전 과제 답과 평가)를 지우고 ${n}일차를 처음부터 다시 해요. 다른 일차 기록은 그대로예요.${n < S.day ? ` 지금 ${S.day}일차인데, ${n}일차로 돌아가요.` : ""}<\/p>`, ok:"지우고 다시 하기", cancel:"취소", danger:true, onOk:() => { resetDayData(n); toast(`${n}일차를 처음부터 다시 할 수 있어요`); } }); },
   wipe(){ showModal({title:"모든 기록 지우기", body:`<p>이 기기의 모든 학습 기록이 지워져요. 되돌릴 수 없어요. 먼저 백업을 권해요.${Sync.enabled ? " 서버(형 드라이브)의 기록은 지워지지 않아요." : ""}<\/p><label class="f" for="wipeIn">확인을 위해 <b>삭제<\/b>라고 입력하세요<input id="wipeIn" type="text" autocomplete="off"><\/label>`, ok:"영구히 지우기", cancel:"취소", danger:true, keep:true, onOk:async () => { if($("#wipeIn").value.trim() !== "삭제"){ toast("‘삭제’라고 입력해 주세요"); return false; } S = newState(); await storePut("state", S); await storePut("pin", null); Sync.authed = false; closeModal(); UI.view = "setup"; render(); toast("기록을 지웠어요"); }}); },
   async viewRefresh(){ const r = await syncPull(); if(r && r.state){ S = Object.assign(newState(), r.state); toast("최신 기록을 불러왔어요"); } render(); },
