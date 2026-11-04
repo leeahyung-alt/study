@@ -1,0 +1,93 @@
+/* ===== 공부방 추가 스타일 ===== */
+.nav{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none}
+.nav::-webkit-scrollbar{display:none}
+.navb{flex:1 0 auto;border:0;background:transparent;border-bottom:3px solid var(--line);padding:6px 10px;font-size:.86rem;color:var(--muted);cursor:pointer;min-height:40px;white-space:nowrap}
+.navb[aria-current="page"]{color:var(--accent);border-bottom-color:var(--accent);font-weight:600}
+.card.warn{border-color:var(--warn)}
+.btn.big{font-size:1.08rem;min-height:56px}
+.periods{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.periods li{display:grid;grid-template-columns:36px 1fr auto;gap:10px;align-items:center;border:1px solid var(--line);border-radius:12px;padding:8px 12px;background:var(--card)}
+.periods li.done{border-color:var(--good)}
+.periods li.doing{border-color:var(--accent)}
+.periods .pn{font-family:var(--display);font-size:1.3rem;color:var(--accent);text-align:center}
+.periods .pt{line-height:1.35;font-weight:500}
+.periods .pt small,.periods .ps small{display:block;font-size:.76rem;color:var(--muted);font-weight:400}
+.periods .ps{font-size:.84rem;text-align:right}
+.lvbars{display:grid;gap:6px}
+.lvrow{display:grid;grid-template-columns:minmax(120px,190px) 1fr auto auto;gap:8px;align-items:center;font-size:.9rem}
+.lvbar{display:grid;grid-template-columns:repeat(6,1fr);gap:3px}
+.lvbar i{height:12px;border-radius:3px;background:var(--line)}
+.lvbar i.on{background:var(--accent)}
+.lvv{font-variant-numeric:tabular-nums;font-weight:600;white-space:nowrap}
+.lvinfo{border:1px solid var(--line);background:var(--card);border-radius:8px;font-size:.76rem;padding:2px 8px;cursor:pointer;min-height:28px}
+@media (max-width:520px){.lvrow{grid-template-columns:1fr auto auto}.lvrow .lvbar{grid-column:1/-1;order:3}}
+.runhead{gap:8px}
+.dots{display:flex;gap:6px;flex-wrap:wrap}
+.dot{width:22px;height:10px;border-radius:5px;border:0;background:var(--line);cursor:pointer;padding:0}
+.dot.past{background:var(--good)}
+.dot.now{background:var(--accent)}
+.qbox{display:grid;gap:12px}
+.opts{display:grid;gap:8px}
+.opt.right{border-color:var(--good);background:color-mix(in srgb,var(--good) 12%,var(--card))}
+.opt.wrong{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 10%,var(--card))}
+button.opt{text-align:left;font:inherit;color:inherit;width:100%;min-height:52px}
+button.opt:disabled{cursor:default;opacity:1}
+.ol{font-weight:600;color:var(--accent);margin-right:4px}
+.passage{background:var(--paper);border-radius:10px;padding:14px 16px;line-height:1.9}
+.passage p{margin:0 0 .7em}
+.passage p:last-child{margin:0}
+.split{margin:0;padding-left:1.4em;display:grid;gap:8px;line-height:1.85}
+.split li p{margin:0}
+.sent-pick{display:grid;gap:6px}
+.sp{text-align:left;border:1.5px solid var(--line);background:var(--card);border-radius:10px;padding:8px 12px;cursor:pointer;font:inherit;color:inherit;line-height:1.6}
+.sp.right{border-color:var(--good);background:color-mix(in srgb,var(--good) 12%,var(--card))}
+.sp.wrong{border-color:var(--bad)}
+.vocab-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+.vcard{border:1px solid var(--line);border-radius:12px;padding:12px;display:grid;gap:4px}
+.vw{font-family:var(--display);font-size:1.25rem;color:var(--accent)}
+.cname{font-size:1.4rem}
+.newsbox{border:1px solid var(--line);border-left:5px solid var(--ink);border-radius:10px;padding:14px;display:grid;gap:8px}
+.tbl-wrap{overflow-x:auto}
+table.dt{border-collapse:collapse;width:100%;font-size:.92rem;font-variant-numeric:tabular-nums}
+table.dt caption{caption-side:top;text-align:left;font-size:.84rem;color:var(--muted);padding-bottom:4px}
+table.dt th,table.dt td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:right;white-space:nowrap}
+table.dt th:first-child,table.dt thead th:first-child{text-align:left}
+table.dt thead th{background:var(--paper);font-weight:600}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:620px){.cols{grid-template-columns:1fr}}
+.rate{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.rate.small{display:flex;flex-wrap:wrap;gap:4px}
+.rbtn{border:1.5px solid var(--line);background:var(--card);border-radius:10px;padding:6px 4px;cursor:pointer;line-height:1.25;min-height:44px;font:inherit;color:inherit}
+.rate.small .rbtn{min-height:34px;font-size:.8rem;padding:4px 8px}
+.rbtn small{display:block;font-size:.7rem;color:var(--muted)}
+.rbtn[aria-pressed="true"]{border-color:var(--accent);background:var(--soft);color:var(--accent);font-weight:600}
+.crit{display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap;border-bottom:1px solid var(--line);padding:4px 0}
+.chart{width:100%;height:auto;display:block}
+.chart .ct{font-size:12px;fill:var(--muted);font-family:var(--body)}
+.chart .cgrid{stroke:var(--line);stroke-width:1}
+.chart .cbg{fill:var(--paper)}
+.chart .cbar{fill:var(--accent)}
+.chart .cprev{stroke:var(--ink);stroke-width:2}
+dl.model{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;margin:8px 0 0}
+dl.model dt{font-weight:600;font-size:.86rem}
+dl.model dd{margin:0;font-size:.9rem}
+.big-list li{font-size:1.04rem}
+.report .meta{font-size:.86rem;color:var(--muted)}
+code{background:var(--paper);padding:2px 6px;border-radius:6px;font-size:.84rem;word-break:break-all}
+body.viewmode .nav{justify-content:flex-start}
+.wb-top{position:static;border-bottom:1px solid var(--line);padding-bottom:8px;margin-bottom:8px;display:grid;gap:8px}
+#wb main,#wb .wb-app{display:grid;gap:16px}
+@media (max-width:520px){.btn.small{width:auto}.row{gap:6px}}
+.qa-bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;border-top:1px dashed var(--line);padding-top:10px}
+.evalbox{display:grid;gap:8px}
+
+.guide .gsec{border-bottom:1px solid var(--line,#d8dce6);padding:.2rem 0}
+.guide .gsec:last-child{border-bottom:0}
+.guide summary{cursor:pointer;font-weight:700;font-size:1.08rem;padding:.75rem 0;list-style-position:inside}
+.guide .gbody{padding:0 0 .9rem}
+.guide .gbody ol,.guide .gbody ul ul{padding-left:1.3rem}
+.guide .gbody li{margin:.35rem 0;line-height:1.65}
+.guide .gper{margin:.6rem 0 1rem}
+.guide .gper h4{margin:.2rem 0}
+.guide .gbtn{display:inline-block;padding:0 .4rem;border:1px solid var(--line,#c9cfdc);border-radius:.4rem;background:var(--soft,#eef1f8);font-weight:600;font-size:.92em;line-height:1.5}
+.guide .notebox{margin:.4rem 0}
