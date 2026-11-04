@@ -158,7 +158,7 @@ function missionSpec(n, k){
   s.key = mKey(n, k); s.k = k; s.n = n;
   const first = NEWS_SITES[(n * 7 + PERIODS.findIndex(p => p.k === k)) % NEWS_SITES.length];
   const search = s.search ? `web_search로 최근 3일 안의 기사를 찾아라(오늘 ${today()}). 기사는 반드시 다음 다섯 신문사 것만 쓴다: 조선일보(chosun.com), 중앙일보(joongang.co.kr), 동아일보(donga.com), 매일경제(mk.co.kr), 한국경제(hankyung.com). 오늘은 ${first[0]}(${first[1]}) 기사를 먼저 찾아라. 검색어에 신문사 이름을 넣어라(예: '${first[0]} ${s.cat.split("·")[0]}'). 다섯 곳에서 도저히 못 찾을 때만 다른 언론사를 쓰고 why에 그 이유를 적어라. 원문 주소(url)는 검색 결과에 실제로 나온 주소만 쓰고 절대 지어내지 마라. 유료 회원 전용 기사는 피하고, 학습자 수준에 너무 어렵지 않은 기사를 골라라.` : "";
-  s.prompt = `${base.join("\n")}\n[교시] ${PERIODS.find(p => p.k === k).n}교시 ${PERIODS.find(p => p.k === k).name}\n[분야] ${s.cat}\n[과제의 목적] ${s.goal}\n[할 일] ${search}\n${s.shape}\n${common}\n[출력] 아래 JSON 하나만 출력하라. 다른 글 금지.\n{"title":"과제 제목","goal":"이 과제로 얻는 능력 1문장","why":"이 자료를 고른 이유 1문장","minutes":35,"sources":[{"title":"기사 제목","outlet":"언론사","date":"YYYY-MM-DD","url":"https://...","category":"분야"}],"guide":["읽는 순서·볼 곳 안내 2~4개"],"words":[{"w":"낱말","hint":"쉬운 뜻"}],"tasks":[{"q":"질문","kind":"short|long|copy|number","rubric":"채점 기준과 자료 속 근거"}],"selfcheck":["제출 전 스스로 확인할 것 2개"]}`;
+  s.prompt = `${base.join("\n")}\n[교시] ${PERIODS.find(p => p.k === k).n}교시 ${PERIODS.find(p => p.k === k).name}\n[분야] ${s.cat}\n[과제의 목적] ${s.goal}\n[할 일] ${search}\n${s.shape}\n${common}\n[출력] 아래 JSON 하나만 출력하라. 다른 글 금지.\n[JSON 규칙] ①문자열 안에 큰따옴표(\")를 절대 쓰지 마라. 인용은 작은따옴표('…')로. ②문자열 안에서 줄을 바꾸지 마라. ③코드블록 표시 없이 { 로 시작해 } 로 끝내라. ④짧게: q는 120자, rubric은 150자, goal·why는 60자 이내, guide 3개·words 5개·selfcheck 2개 이하.\n{"title":"과제 제목","goal":"이 과제로 얻는 능력 1문장","why":"이 자료를 고른 이유 1문장","minutes":35,"sources":[{"title":"기사 제목","outlet":"언론사","date":"YYYY-MM-DD","url":"https://...","category":"분야"}],"guide":["읽는 순서·볼 곳 안내 2~4개"],"words":[{"w":"낱말","hint":"쉬운 뜻"}],"tasks":[{"q":"질문","kind":"short|long|copy|number","rubric":"채점 기준과 자료 속 근거"}],"selfcheck":["제출 전 스스로 확인할 것 2개"]}`;
   return s;
 }
 function extraSpec(n, k){
@@ -191,7 +191,8 @@ async function loadMission(spec, force){
   let j = await aiCall({action:"mission", key:spec.key, prompt:spec.prompt, search:spec.search, force:!!force});
   delete M_BUSY[spec.key];
   S.missions = S.missions || {};
-  if(!j.ok || !j.mission || !Array.isArray(j.mission.tasks)){ (S.mErr = S.mErr || {})[spec.key] = mErr(j); render(); return; }
+  if(!j.ok && (j.error === "parse" || j.error === "api") && !spec._fixed){ spec._fixed = true; M_BUSY[spec.key] = "load"; j = await aiCall({action:"mission", key:spec.key, prompt:spec.prompt + "\n[다시 요청] 앞 응답이 올바른 JSON이 아니었다. 질문 수를 줄이고 더 짧게, JSON 규칙을 꼭 지켜라.", search:spec.search, force:true}); delete M_BUSY[spec.key]; }
+  if(!j.ok || !j.mission || !Array.isArray(j.mission.tasks)){ (S.mErr = S.mErr || {})[spec.key] = mErr(j) + (j.detail ? `\n(오류 내용: ${String(j.detail).slice(0, 160)})` : ""); render(); return; }
   if(spec.search && !(j.mission.sources || []).some(x => siteOk(x.url)) && !spec._retried){ spec._retried = true; M_BUSY[spec.key] = "load"; const j2 = await aiCall({action:"mission", key:spec.key, prompt:spec.prompt + "\n[다시 요청] 앞에서 고른 기사는 다섯 신문사 기사가 아니었다. 반드시 조선일보·중앙일보·동아일보·매일경제·한국경제 중에서 찾아라.", search:spec.search, force:true}); delete M_BUSY[spec.key]; if(j2.ok && j2.mission && Array.isArray(j2.mission.tasks)) j = j2; }
   if(S.mErr) delete S.mErr[spec.key];
   const prev = S.missions[spec.key];
@@ -217,7 +218,7 @@ function missionView(spec){
   const err = (S.mErr || {})[spec.key];
   if(!rec){
     if(M_BUSY[spec.key]) return `<div class="notebox"><b>AI가 ${spec.search ? "오늘의 실제 기사를 찾아 읽고" : "자료를 보고"} 과제를 만드는 중이에요.</b><br>${spec.search ? "30초~1분" : "20~40초"} 걸려요. 이 화면에서 기다려 주세요.</div>`;
-    if(err) return `<div class="warnbox">${esc(err)}</div><button class="btn" data-act="mLoad" data-key="${spec.key}">다시 시도</button>`;
+    if(err) return `<div class="warnbox" style="white-space:pre-wrap">${esc(err)}</div><button class="btn" data-act="mLoad" data-key="${spec.key}">다시 시도</button>`;
     setTimeout(() => loadMission(spec), 30);
     return `<div class="notebox">과제를 불러오는 중이에요…</div>`;
   }
