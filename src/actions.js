@@ -134,6 +134,8 @@ const ACT = {
   async syncNow(){ const ok = await syncPush(true); toast(ok ? "서버에 저장했어요" : (Sync.err || "저장하지 못했어요")); render(); },
   pinEnter(){ showModal({title:"기록 비밀번호", body:`<label class="f" for="pinRe">비밀번호<input id="pinRe" type="password" inputmode="numeric"></label>`, ok:"확인", cancel:"취소", onOk:async () => { const pin = $("#pinRe").value.trim(); const r = await syncAuth(pin); if(r.ok){ await storePut("pin", pin); Store._pinCache = pin; Sync.authed = true; Sync.err = null; syncPush(true); toast("서버와 연결했어요"); } else toast(r.error === "pin" ? "비밀번호가 맞지 않아요" : "서버에 연결하지 못했어요"); render(); }}); },
   copyView(){ copyText(location.href.split("#")[0] + "#view"); },
+  resetDay(){ const n = +(($("#rdN") || {}).value || 0); if(!(n >= 1 && n <= S.day)){ toast(`1~${S.day} 사이 숫자를 넣어 주세요`); return; }
+    showModal({title:`${n}일차 기록 지우기`, body:`<p><b>${n}일차</b>에 한 공부(교시 진행, 문제 답, 글, 뉴스·시장 기록, 실전 과제 답과 평가)를 지우고 ${n}일차를 처음부터 다시 해요. 다른 일차 기록은 그대로예요.${n < S.day ? ` 지금 ${S.day}일차인데, ${n}일차로 돌아가요.` : ""}</p>`, ok:"지우고 다시 하기", cancel:"취소", danger:true, onOk:() => { resetDayData(n); toast(`${n}일차를 처음부터 다시 할 수 있어요`); } }); },
   wipe(){ showModal({title:"모든 기록 지우기", body:`<p>이 기기의 모든 학습 기록이 지워져요. 되돌릴 수 없어요. 먼저 백업을 권해요.${Sync.enabled ? " 서버(형 드라이브)의 기록은 지워지지 않아요." : ""}</p><label class="f" for="wipeIn">확인을 위해 <b>삭제</b>라고 입력하세요<input id="wipeIn" type="text" autocomplete="off"></label>`, ok:"영구히 지우기", cancel:"취소", danger:true, keep:true, onOk:async () => { if($("#wipeIn").value.trim() !== "삭제"){ toast("‘삭제’라고 입력해 주세요"); return false; } S = newState(); await storePut("state", S); await storePut("pin", null); Sync.authed = false; closeModal(); UI.view = "setup"; render(); toast("기록을 지웠어요"); }}); },
   async viewRefresh(){ const r = await syncPull(); if(r && r.state){ S = Object.assign(newState(), r.state); toast("최신 기록을 불러왔어요"); } render(); },
   askOpen(){ askOpen(); },
@@ -240,3 +242,25 @@ document.addEventListener("visibilitychange", () => { if(document.visibilityStat
   if(/(^|#|&)guide\b/.test(location.hash)) UI.view = "guide";
   render();
 })();
+
+function resetDayData(n){
+  const dk = String(n);
+  delete S.dayLog[dk]; delete S.dayLog[n];
+  const dayConcepts = ((curDay(n) || {}).concepts || []);
+  S.attempts = S.attempts.filter(a => a.day !== n);
+  Object.keys(S.answers || {}).forEach(k => { if((S.answers[k] || {}).day === n || new RegExp(`^d${n}\\.`).test(k)) delete S.answers[k]; });
+  S.portfolio = (S.portfolio || []).filter(p => p.day !== n);
+  S.news = (S.news || []).filter(x => x.day !== n);
+  S.marketLog = (S.marketLog || []).filter(x => x.day !== n);
+  Object.keys(S.missions || {}).forEach(k => { if(k.startsWith(`d${n}_`)) delete S.missions[k]; });
+  if(S.mErr) Object.keys(S.mErr).forEach(k => { if(k.startsWith(`d${n}_`)) delete S.mErr[k]; });
+  S.reviewQ = (S.reviewQ || []).filter(r => r.day !== n).map(r => { if(r.doneDay === n){ r.done = false; delete r.doneDay; delete r.ans; delete r.fb; } return r; });
+  if(S.evals) Object.keys(S.evals).forEach(k => { S.evals[k] = S.evals[k].filter(e => e.day !== n); if(!S.evals[k].length) delete S.evals[k]; });
+  S.qa = (S.qa || []).filter(x => x.day !== n);
+  S.applied = (S.applied || []).filter(x => x.day !== n);
+  Object.keys(S.srs || {}).forEach(k => { if(k.startsWith(`vv.${n}.`) || dayConcepts.some(c => k === "cc." + c)) delete S.srs[k]; });
+  dayConcepts.forEach(c => { if(S.concepts) delete S.concepts[c]; });
+  Object.values(S.companies || {}).forEach(co => { if(co.dayNotes) delete co.dayNotes[n]; if(co.ideaNotes) co.ideaNotes = co.ideaNotes.filter(x => x.day !== n); });
+  S.day = n; S.pos = {day:n, k:"p1"}; UI.run = null; UI.qset = {}; UI.view = "home";
+  touch(); saveNow(); if(Sync.authed) syncPush(true); render();
+}

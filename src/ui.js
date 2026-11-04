@@ -464,6 +464,7 @@ function viewSettings(){
   <section class="card"><h2>사용 설명서</h2><p class="small muted">기능과 공부 순서를 처음부터 자세히 알려 줘요.</p><button class="btn small" data-act="go" data-v="guide">사용 설명서 보기</button></section>
   <section class="card"><h2>보기 설정</h2><div class="row"><span>글자 크기</span>${[16,18,20,22].map(f => `<button class="btn small ${S.settings.font === f ? "" : "ghost"}" data-act="font" data-f="${f}">${f}</button>`).join("")}</div>
   <label class="row"><input type="checkbox" data-tts="1" ${S.settings.tts ? "checked" : ""}> 읽어주기 버튼 보이기 (브라우저가 지원할 때)</label></section>
+  <section class="card"><h2>일차 다시 하기</h2><p class="small muted">시험으로 눌러 본 일차가 있으면 그 일차의 기록만 지우고 처음부터 다시 할 수 있어요. 다른 일차 기록은 그대로예요.</p><div class="row"><label class="f" for="rdN" style="max-width:8rem">일차<input id="rdN" type="number" min="1" max="${S.day}" value="${S.day}" inputmode="numeric"></label><button class="btn small" data-act="resetDay">이 일차 기록 지우기</button></div></section>
   <section class="card"><h2>학습자</h2><p>${esc(S.profile.name)} · 시작 ${fmtDate(isoOf(S.created))} · ${S.day}일차</p><button class="btn danger small" data-act="wipe">모든 기록 지우기</button></section>`;
 }
 function viewReports(){
