@@ -15,7 +15,7 @@ const R=[]; const ok=(n,c,x='')=>R.push(`${c?'PASS':'FAIL'} | ${n}${x?' | '+x:''
   ok('1교시에 실전 과제·보충 단계', ids.includes('mis') && ids.includes('mx'), ids.join(','));
   // 과제 단계 전 이동 막힘 확인: 점으로 끝까지 점프
   await p.evaluate(()=>{ UI.run.si=UI.run.steps.findIndex(s=>s.id==='mis'); enterStep(); render(); }); await p.waitForTimeout(800);
-  ok('AI 과제 불러옴(기사 링크)', (await p.textContent('#app')).includes('금리 동결 기사'));
+  await p.waitForTimeout(1500); const tt=await p.textContent('#app'); ok('AI 과제 불러옴(기사 링크)', tt.includes('금리 동결 기사'), tt.slice(0,300));
   await p.click('[data-act=stepNext]'); await p.waitForTimeout(200);
   ok('제출 전 다음으로 못 감', await p.evaluate(()=>UI.run.steps[UI.run.si].id)==='mis');
   await p.click('[data-act=mSubmit]'); await p.waitForTimeout(200);

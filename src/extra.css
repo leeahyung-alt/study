@@ -102,3 +102,4 @@ body.viewmode .nav{justify-content:flex-start}
 .linkbtn{background:none;border:0;color:var(--accent,#1f4fa3);text-decoration:underline;font:inherit;cursor:pointer;padding:0}
 .center{text-align:center}
 .mq{line-height:1.6;white-space:normal;word-break:keep-all;overflow-wrap:anywhere}
+.mw{display:block;font-weight:400;font-size:.9rem;line-height:1.55;color:var(--ink);background:var(--paper,#f4f6fb);border-radius:6px;padding:.25rem .5rem;margin-top:.2rem}
