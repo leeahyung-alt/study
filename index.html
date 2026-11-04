@@ -3154,8 +3154,10 @@ const QA_LIMIT = 10;
 function qaEnabled(){ return Sync.enabled; }
 function qaKeyAndContext(){
   if(UI.view === "wb"){ const w = WB.context ? WB.context() : null; return w ? {key:w.key, ctx:w.text, label:"기업분석 워크북"} : null; }
+  if(UI.view === "extra") return qaExtraContext();
   const r = UI.run; if(!r) return null;
   const s = r.steps[r.si]; const P = PERIODS.find(p => p.k === r.k);
+  if(s.id === "assess" || s.id === "wassess") return null;
   const lines = [`[학습 위치] ${r.day}일차 ${P.n}교시 ${P.name} / 활동: ${s.title}`, `[학습자 수준] 종합 레벨 ${S.levels ? overallLevel(S.levels) : 0}, 독해 레벨 ${S.levels ? S.levels.R : 0}`];
   let key = `d${r.day}.${r.k}.${s.id}`;
   const dc = dayContent(r.day);
@@ -3182,6 +3184,26 @@ function qaKeyAndContext(){
   return {key, ctx:lines.join("\n").slice(0, 7800), label:s.title};
 }
 function qaLeft(key){ if(S.qaLim !== QA_LIMIT){ S.qaLeft = {}; S.qaLim = QA_LIMIT; } const v = (S.qaLeft || {})[key]; return v === undefined ? QA_LIMIT : v; }
+function qaItemLines(st, lines){
+  const it = st.items[st.i], q = it.q, res = st.res[st.i];
+  lines.push(`[문제] ${q.stem}`);
+  if(q.passage) lines.push(`[문제 지문] ${q.passage}`);
+  if(q.options) lines.push(`[보기] ${q.options.map((o, i) => `${i + 1}) ${o}`).join(" / ")}`);
+  if(res && !res.restored){ lines.push(`[학습자는 이미 답함] 학습자 답: ${q.t === "mcq" ? (res.chosen + 1) + "번" : (res.val || (S.answers[it.key] || {}).text || "")} / 정답: ${q.t === "mcq" ? (q.answer + 1) + "번" : q.t === "num" ? q.answer : "서술형"} / 해설: ${q.explain || q.model || ""}`); }
+  else lines.push("[학습자는 아직 답하지 않음 → 정답을 말하지 말고 힌트로 도와줄 것]");
+  return it.key;
+}
+function qaExtraContext(){
+  const tab = UI.tab || "realnews";
+  if(tab === "reassess") return null;
+  const names = {realnews:"실제 뉴스 분석", realmarket:"실제 시장 기록", retry:"틀린 문제 다시 풀기", challenge:"도전 문제", library:"개념 사전", gloss:"용어 사전"};
+  const lines = [`[학습 위치] 심화 학습 / ${names[tab] || tab} (${S.day}일차 무렵)`, `[학습자 수준] 종합 레벨 ${S.levels ? overallLevel(S.levels) : 0}`];
+  let key = `x.${tab}.${isoOf(new Date())}`;
+  if(tab === "realnews"){ const d = UI.realNews || {}; lines.push(`[학습자가 붙여넣은 실제 기사] 제목: ${d.headline || ""} / 출처: ${d.source || ""} / 날짜: ${d.srcDate || ""}\n${(d.body || "").slice(0, 2500)}`); const a = ["fact","meaning","why","link","unknown","judge","counter"].filter(k => d[k]).map(k => `${k}: ${d[k]}`).join(" / "); if(a) lines.push(`[학습자 분석 메모] ${a}`); }
+  if(tab === "realmarket"){ const d = UI.realMkt || {}; lines.push(`[학습자 시장 기록] 기준: ${d.when || ""} / 출처: ${d.source || ""}\n숫자: ${d.data || ""}\n해석: ${d.text || ""}`); }
+  if(tab === "retry" || tab === "challenge"){ const st = UI.qset["x-" + tab]; if(st && st.i < st.items.length) key = qaItemLines(st, lines); }
+  return {key, ctx:lines.join("\n").slice(0, 7800), label:names[tab] || "심화 학습"};
+}
 function qaButton(){
   if(!qaEnabled()) return "";
   const k = qaKeyAndContext(); if(!k) return "";
@@ -3744,7 +3766,7 @@ function viewExtra(){
   if(tab === "library") body = xLibrary();
   if(tab === "gloss") body = xGloss();
   if(tab === "reassess") body = xReassess();
-  return `<section class="card"><h2>심화 학습<\/h2><p class="small muted">기본 학습 경로와 별도로 더 공부하고 싶을 때 쓰는 곳이에요.<\/p><div class="tabs">${tabs}<\/div><\/section>${body}`;
+  return `<section class="card"><h2>심화 학습<\/h2><p class="small muted">기본 학습 경로와 별도로 더 공부하고 싶을 때 쓰는 곳이에요.<\/p><div class="tabs">${tabs}<\/div>${qaButton()}<\/section>${body}`;
 }
 function xRealNews(){
   const d = UI.realNews || {};
