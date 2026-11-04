@@ -177,19 +177,15 @@ function buildSteps(n, k){
       steps.push({id:"nsteps", title:"단계별 질문", mins:25, qs:() => dc.news.steps.map((s, i) => Q(`d${n}.ns${i}`, {t:"free", stem:s.q, keyPoints:[s.hint || "기사 속 근거를 들었다", "모범 답안과 핵심이 같다"].filter(Boolean), model:s.model}, "N", {label:`생각 단계 ${i + 1}/${dc.news.steps.length}: ${({fact:"무엇이 사실인가", meaning:"무슨 뜻인가", why:"왜 일어났나", link:"어떻게 연결되나", unknown:"아직 모르는 것", judge:"어떤 판단을 할 수 있나", counter:"판단이 틀릴 수 있는 이유"})[s.k] || ""}`, newsStep:s.k}))});
       steps.push({id:"nq", title:"판단 문제", mins:7, qs:() => dayQuestionItems(n, "news")});
       steps.push({id:"ncard", title:"뉴스 기록 카드", mins:10, render:stepNewsCard});
-      steps.push({id:"rnews", title:"오늘의 실제 뉴스", mins:15, render:stepRealNewsDaily});
     }
     if(k === "p4"){
       steps.push({id:"cread", title:dc.company.mode === "dart" ? "사업보고서 연습 발췌 읽기" : "기업 사례 읽기", mins:12, render:stepCompanyRead});
       steps.push({id:"cqs", title:"분석 문제", mins:18, qs:() => dayQuestionItems(n, "company"), weak:"company"});
-      if(REAL_DART[n]) steps.push({id:"creal", title:"내 기업 사업보고서: 오늘 볼 곳", mins:15, render:stepRealDart});
-      steps.push({id:"capply", title:dc.company.mode === "dart" ? "내 기업 사업보고서 워크북" : "내 생각 정리·적용", mins:20, render:stepCompanyApply});
     }
     if(k === "p5"){
       steps.push({id:"mread", title:"시장 자료 읽기", mins:10, render:stepMarketRead});
       steps.push({id:"mqs", title:"분석 문제", mins:15, qs:() => dayQuestionItems(n, "market"), weak:"market"});
       steps.push({id:"mcls", title:"사실·가능한 설명·확인된 원인", mins:12, qs:() => dc.market.classify.map((c, i) => Q(`d${n}.k${i}`, {t:"mcq", stem:`이 문장은 무엇일까요? “${c.s}”`, options:["자료에 적힌 사실","가능한 설명(아직 확인 안 됨)","자료로 확인된 원인"], answer:{fact:0, possible:1, verified:2}[c.a], explain:c.why}, "M", {label:"분류하기"}))});
-      steps.push({id:"mmemo", title:"나의 시장 메모", mins:13, render:stepMarketMemo});
     }
     if(k === "p6"){
       steps.push({id:"wrev", title:"오늘 배운 것 다시 보기", mins:5, render:stepWriteReview});
@@ -200,9 +196,16 @@ function buildSteps(n, k){
   } else {
     buildReviewSteps(n, k, steps, kind);
   }
+  const isAssess = steps.some(s => s.id === "assess" || s.id === "wassess");
+  if(!isAssess){
+    const firstK = steps0FirstPeriod(n);
+    if(k === firstK){ const rv = reviewStep(n); if(rv) steps.unshift(rv); }
+    steps.push(...missionSteps(n, k));
+  }
   steps.push({id:"end", title:"교시 마무리", mins:2, render:stepEnd});
   return steps;
 }
+function steps0FirstPeriod(n){ const kind = dayKind(n); const isCp = kind === "checkpoint" || (kind === "review" && CHECKPOINTS.includes(n)) || (kind === "advanced" && n % 30 === 0); return isCp ? "p3" : "p1"; }
 function buildReviewSteps(n, k, steps, kind){
   const isCp = kind === "checkpoint" || (kind === "review" && CHECKPOINTS.includes(n)) || (kind === "advanced" && n % 30 === 0);
   if(k === "p1" && isCp){ steps.push({id:"assess", title:`${n}일 평가: 새 문제로 레벨 확인`, mins:45, render:stepAssess}); return; }
@@ -218,9 +221,9 @@ function buildReviewSteps(n, k, steps, kind){
     steps.push({id:"crev", title:"개념 복습 카드", mins:25, qs:() => due.map(c => { const it = srsItem(c); return it && Q(it.key, it.q, it.dom, {label:it.label, srs:c, concept:it.concept}); }).filter(Boolean)});
     steps.push({id:"cmap", title:"이번 주 개념 연결하기", mins:20, render:stepConceptMap});
   }
-  if(k === "p3"){ steps.push({id:"nlink", title:"이번 주 뉴스 연결하기", mins:20, render:stepNewsLink}); steps.push({id:"nreal", title:"실제 뉴스 한 편 분석(선택)", mins:25, render:stepRealNews}); }
-  if(k === "p4"){ steps.push({id:"cwrong", title:"틀린 기업 문제 다시 풀기", mins:15, qs:() => wrongItems(/^(d\d+\.c\d+|c\.[a-z_0-9]+\.\d+)$/, kind === "advanced" ? 60 : 8, 12)}); steps.push({id:"capply", title:"사업보고서 워크북 이어 하기", mins:30, render:stepCompanyApply}); }
-  if(k === "p5"){ steps.push({id:"mwrong", title:"틀린 시장 문제 다시 풀기", mins:15, qs:() => wrongItems(/^d\d+\.[mk]\d+$/, kind === "advanced" ? 60 : 8, 12)}); steps.push({id:"mreal", title:"실제 시장 기록 남기기(선택)", mins:30, render:stepRealMarket}); }
+  if(k === "p3"){ steps.push({id:"nlink", title:"이번 주 뉴스 연결하기", mins:20, render:stepNewsLink}); }
+  if(k === "p4"){ steps.push({id:"cwrong", title:"틀린 기업 문제 다시 풀기", mins:15, qs:() => wrongItems(/^(d\d+\.c\d+|c\.[a-z_0-9]+\.\d+)$/, kind === "advanced" ? 60 : 8, 12)}); }
+  if(k === "p5"){ steps.push({id:"mwrong", title:"틀린 시장 문제 다시 풀기", mins:15, qs:() => wrongItems(/^d\d+\.[mk]\d+$/, kind === "advanced" ? 60 : 8, 12)}); }
   if(k === "p6"){ steps.push({id:"wweek", title:kind === "advanced" ? "자유 분석글 쓰기" : "이번 주 종합 글 쓰기", mins:25, render:stepWrite}); steps.push({id:"wself", title:"스스로 점검", mins:5, render:stepWriteSelf}); steps.push({id:"wredo", title:"지난 글 고쳐 쓰기", mins:20, render:stepRewriteOld}); }
 }
 function weakExtra(kind){

@@ -23,7 +23,7 @@ function showIdle(){
   document.body.appendChild(b);
 }
 
-const NAV = [["home","홈"],["growth","성장"],["records","기록"],["wb","기업 워크북"],["extra","심화"],["settings","설정"]];
+const NAV = [["home","오늘 공부"],["records","내 기록"],["settings","설정"]];
 function header(){
   if(VIEW_MODE) return `<div class="top-row"><span class="brand">${esc(CFG.APP_NAME)} · 학습 현황 보기</span><div class="row keep"><span id="savePill" class="pill"></span><button class="pill" data-act="viewRefresh">새로 고침</button></div></div><nav class="nav">${[["growth","성장"],["reports","보고서"],["records","기록"]].map(([v, t]) => `<button class="navb" data-act="go" data-v="${v}" aria-current="${UI.view === v ? "page" : "false"}">${t}</button>`).join("")}</nav>`;
   if(!S.profile) return `<div class="top-row"><span class="brand">${esc(CFG.APP_NAME)}</span><span id="savePill" class="pill"></span></div>`;
@@ -52,7 +52,7 @@ function render(){
   else if(v === "wb") h = `<div class="row between"><button class="btn small ghost" data-act="wbBack">← ${UI.wbReturn ? "교시로 돌아가기" : "홈으로"}</button>${qaEnabled() ? `<button class="btn small" data-act="askOpen">막혔어요: 질문하기</button>` : ""}</div><div id="wb"></div>`;
   $("#app").innerHTML = h;
   if(v === "wb" && !VIEW_MODE && S.profile){ WB.mount($("#wb")); }
-  window.scrollTo(0, 0);
+  if(UI.keepScroll) UI.keepScroll = false; else window.scrollTo(0, 0);
 }
 
 /* ================= 처음 설정·진단 ================= */
@@ -159,10 +159,8 @@ function viewHome(){
   <h1>${esc(cur ? cur.title : "심화 학습")}</h1><p>오늘의 목표: ${esc(goal)}</p>
   <ol class="periods">${PERIODS.map(p => { const pl = (dl.periods || {})[p.k] || {}; const st = pl.st === "done" ? "완료" : pl.st === "doing" ? "진행 중" : pl.st === "skip" ? "건너뜀" : "시작 전"; return `<li class="${pl.st || "todo"}"><span class="pn">${p.n}</span><span class="pt">${esc(p.name)}<small>${p.mins.map(x => x[0]).slice(0, 3).join(" · ")}</small></span><span class="ps">${st}${pl.active ? `<small>${mins(pl.active)}분</small>` : ""}</span></li>`; }).join("")}</ol>
   ${firstTodo ? `<button class="btn big" data-act="startPeriod" data-k="${firstTodo.k}">${dl.periods && Object.keys(dl.periods).length ? `${firstTodo.n}교시 이어서 공부하기` : "오늘 학습 시작 (1교시부터)"}</button>` : `<div class="notebox">오늘 여섯 교시를 모두 마쳤어요.</div><div class="row"><button class="btn big" data-act="dayReport" data-d="${n}">오늘의 성장 보고서 보기</button><button class="btn big ghost" data-act="nextDayNow">바로 ${n + 1}일차 시작하기</button></div>`}
-  <p class="small muted">교시마다 50분, 사이에 10분 쉬어요. 복습 카드 ${dueC}장이 기다리고 있어요.</p></section>
-  <section class="card"><div class="row between"><h2>나의 현재 성장 상태</h2><button class="btn small ghost" data-act="go" data-v="growth">자세히</button></div>
-  ${S.levels ? `<p>종합 단계: <b>레벨 ${ov}</b> (${LEVEL_NAMES[ov]})</p>${levelBars(S.levels)}<p class="small muted">레벨은 평가(첫날·7·14·30·60·90일)에서 새 문제로 확인한 결과예요.</p>` : `<p>아직 진단 결과가 없어요.</p>`}</section>
-  <section class="card"><h2>최근 새롭게 할 수 있게 된 것</h2>${can.length ? `<ul class="clean">${can.map(c => `<li>${esc(c.text)} <span class="small muted">(${esc(c.verified)})</span></li>`).join("")}</ul>` : `<p class="small muted">개념을 배운 날과 <b>다른 날</b> 복습 문제에서 다시 맞혀야 ‘할 수 있게 된 것’으로 기록돼요. 내일 복습부터 생기기 시작해요.</p>`}</section>`;
+  <p class="small muted">위 버튼만 누르면 순서대로 진행돼요. 교시마다 50분(마지막에 AI 실전 과제와 평가), 사이에 10분 쉬어요.</p></section>
+  <p class="small muted center">${S.levels ? `종합 레벨 ${ov} (${LEVEL_NAMES[ov]}) · ` : ""}<button class="linkbtn" data-act="go" data-v="records" data-t="growth">내 성장 기록 보기</button></p>`;
 }
 function levelBars(lv){
   return `<div class="lvbars">${DOM_ORDER.map(d => `<div class="lvrow" ><span class="lvn">${esc(DOMAINS[d])}</span><span class="lvbar" aria-label="레벨 ${lv[d]}">${[1,2,3,4,5,6].map(i => `<i class="${i <= (lv[d] || 0) ? "on" : ""}"></i>`).join("")}</span><span class="lvv">레벨 ${lv[d] ?? 0}</span><button class="lvinfo" data-act="evidence" data-d="${d}" aria-label="${esc(DOMAINS[d])} 근거 보기">근거</button></div>`).join("")}</div>`;
@@ -254,7 +252,7 @@ function viewDayReport(n){
   return `<section class="card today"><div class="crumb">${n}일차 성장 보고서 · ${fmtDate(r.dateISO)}</div><h1>오늘 새롭게 할 수 있게 된 것</h1>
   ${r.cans.length || r.comebacks.length || r.ach.length ? `<ul class="clean big-list">${r.ach.map(a => `<li><b>성취: ${esc(a.name)}</b> <span class="small muted">(${esc(a.verify)})</span></li>`).join("")}${r.cans.map(c => `<li>${esc(c.text)}</li>`).join("")}${r.comebacks.length ? `<li>예전에 틀렸던 문제 <b>${r.comebacks.length}개</b>를 오늘 다시 맞혔어요.</li>` : ""}</ul>` : `<p>오늘 처음 배운 내용은 <b>다른 날 복습에서 다시 맞혀야</b> ‘할 수 있게 된 것’으로 기록돼요. 확인되지 않은 실력은 칭찬하지 않을게요.</p>`}</section>
   ${reportSections(r)}
-  <div class="row">${n === S.day && dayIsDone(n) && !VIEW_MODE ? `<button class="btn" data-act="nextDayNow">바로 ${n + 1}일차 시작하기</button>` : ""}<button class="btn ${n === S.day && dayIsDone(n) ? "ghost" : ""}" data-act="go" data-v="home">홈으로</button><button class="btn ghost" data-act="go" data-v="growth">성장 화면 보기</button></div>
+  <div class="row">${n === S.day && dayIsDone(n) && !VIEW_MODE ? `<button class="btn" data-act="nextDayNow">바로 ${n + 1}일차 시작하기</button>` : ""}<button class="btn ${n === S.day && dayIsDone(n) ? "ghost" : ""}" data-act="go" data-v="home">홈으로</button><button class="btn ghost" data-act="go" data-v="records" data-t="growth">성장 화면 보기</button></div>
   ${n === S.day && dayIsDone(n) && !VIEW_MODE ? `<p class="small muted">더 공부하고 싶으면 바로 다음 일차로 넘어가도 돼요. 복습 카드는 날짜 기준으로 계속 나와요. 하루에 너무 많이 넘기면 복습 간격이 짧아져 기억에 덜 남을 수 있어요.</p>` : ""}`;
 }
 function reportSections(r){
@@ -352,9 +350,11 @@ function evidenceModal(d){
 
 /* ================= 기록 ================= */
 function viewRecords(){
-  const tab = UI.tab || "write";
-  const tabs = [["write","글쓰기 포트폴리오"],["news","뉴스 기록"],["market","시장 기록"],["company","기업분석"],["qa","질문·첨삭"],["days","학습 일지"]].map(([k, t]) => `<button class="tab" data-act="rtab" data-t="${k}" aria-selected="${tab === k}">${t}</button>`).join("");
+  const tab = UI.tab || "growth";
+  const tabs = [["growth","성장"],["missions","실전 과제"],["write","글쓰기"],["news","뉴스 기록"],["market","시장 기록"],["company","기업분석"],["qa","질문·첨삭"],["days","학습 일지"]].map(([k, t]) => `<button class="tab" data-act="rtab" data-t="${k}" aria-selected="${tab === k}">${t}</button>`).join("");
   let body = "";
+  if(tab === "growth") body = viewGrowth();
+  if(tab === "missions") body = recMissions();
   if(tab === "write") body = recWrite();
   if(tab === "news") body = recNews();
   if(tab === "market") body = recMarket();

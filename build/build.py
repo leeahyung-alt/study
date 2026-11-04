@@ -31,7 +31,7 @@ if os.path.exists(wp):
 data = {'curriculum': cur, 'conceptList': clist, 'concepts': concepts, 'days': days, 'assess': assess}
 sync = sys.argv[1] if len(sys.argv) > 1 else ''
 cfg = {'SYNC_URL': sync, 'LEARNER_ID': 'learner', 'APP_NAME': '금융시장 분석가 공부방'}
-js = ''.join(open(f'{ROOT}/src/{n}', encoding='utf-8').read() + '\n' for n in ['core.js', 'workbook.js', 'period.js', 'realqa.js', 'guide.js', 'ui.js', 'actions.js'])
+js = ''.join(open(f'{ROOT}/src/{n}', encoding='utf-8').read() + '\n' for n in ['core.js', 'workbook.js', 'period.js', 'realqa.js', 'mission.js', 'guide.js', 'ui.js', 'actions.js'])
 def safe(s): return s.replace('</', '<\\/')
 html = f'''<!DOCTYPE html>
 <html lang="ko">

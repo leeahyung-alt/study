@@ -88,7 +88,7 @@ async function syncPull(){
     const r = await fetch(`${CFG.SYNC_URL}?id=${encodeURIComponent(CFG.LEARNER_ID)}&t=${Date.now()}`, {method:"GET"});
     const j = await r.json();
     if(!j.ok) throw new Error(j.error || "read");
-    Sync.err = null;
+    Sync.err = null; Sync.ver = j.ver || 0;
     if(j.data && j.data.state){ Sync.remoteUpdated = j.data.updated || 0; return j.data; }
     return {state:null};
   }catch(e){ Sync.err = "서버에 연결하지 못했어요"; return null; }

@@ -135,6 +135,8 @@ function qaKeyAndContext(){
     if(r.k === "p6"){ const w = writingTask(r.day); const p = portfolioFor(w.key); lines.push(`[글쓰기 과제] ${w.prompt}\n[학습자 글] ${p ? p.v1 : "(아직 없음)"}`); }
   }
   if(s.concept){ const c = D.concepts[s.concept]; if(c) lines.push(`[오늘 개념] ${c.name}: ${c.easy} ${c.real}`); }
+  if(s.id === "mis" || s.id === "mx") lines.push(...missionContextLines(r.day, r.k, s.id));
+  if(s.id === "rq0") lines.push("[어제 지적 복습 질문] " + reviewDue(r.day).map(x => x.q).join(" / ") + "\n[학습자는 기억으로 답하는 중 → 답을 대신 쓰지 말고 힌트만]");
   if(s.id === "rnews" || s.id === "nreal"){ const d = UI.realNews || {}; lines.push(`[학습자가 붙여넣은 실제 기사] 제목: ${d.headline || ""} / 출처: ${d.source || ""} / 날짜: ${d.srcDate || ""}\n${(d.body || "").slice(0, 2500)}`); }
   if(s.id === "creal"){ const g = REAL_DART[r.day]; const co = activeCompany(); if(g) lines.push(`[실제 사업보고서 과제] 기업: ${co ? co.name : "(미정)"} / 볼 곳: ${g[0]} / 찾을 것: ${g[1]} / 질문: ${g[2]}`); }
   return {key, ctx:lines.join("\n").slice(0, 7800), label:s.title};

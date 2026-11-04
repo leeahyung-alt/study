@@ -79,10 +79,14 @@ const ACT = {
   startPeriod(el){ startPeriod(el.dataset.k); },
   continueDay(){ dayLog(S.day).lastDate = today(); touch(); render(); },
   skipToNext(){ dayLog(S.day).movedOn = today(); S.day++; touch(); render(); },
-  stepNext(){ if(!UI.run) return; if(UI.run.si < UI.run.steps.length - 1){ UI.run.si++; enterStep(); touch(); } render(); },
+  stepNext(){ if(!UI.run) return; const cs = UI.run.steps[UI.run.si]; const g = cs.gate && cs.gate(); if(g){ toast(g); return; } if(UI.run.si < UI.run.steps.length - 1){ UI.run.si++; enterStep(); touch(); } render(); },
   stepPrev(){ if(!UI.run) return; if(UI.run.si === 0){ timerStop(); UI.run = null; UI.view = "home"; } else { UI.run.si--; enterStep(); } touch(); render(); },
-  jumpStep(el){ if(!UI.run) return; UI.run.si = +el.dataset.i; enterStep(); render(); },
-  endPeriod(){ endPeriod(); },
+  jumpStep(el){ if(!UI.run) return; const to = +el.dataset.i; for(let i = UI.run.si; i < to; i++){ const g = UI.run.steps[i].gate && UI.run.steps[i].gate(); if(g){ toast(g); UI.run.si = i; render(); return; } } UI.run.si = to; enterStep(); render(); },
+  endPeriod(){ const bad = UI.run.steps.find(s => s.gate && s.gate()); if(bad){ toast(bad.gate()); return; } endPeriod(); },
+  mLoad(el){ const key = el.dataset.key; const m = key.match(/^d(\d+)_(p\d)(_x)?$/); if(!m) return; const sp = m[3] ? Object.assign(extraSpec(+m[1], m[2]), {extra:true}) : missionSpec(+m[1], m[2]); if(S.mErr) delete S.mErr[key]; UI.keepScroll = true; loadMission(sp, !!el.dataset.force); },
+  mSubmit(el){ UI.keepScroll = true; submitMission(el.dataset.key); },
+  mNowDone(el){ const r = (S.missions || {})[el.dataset.key]; if(r){ r.nowDone = true; touch(); } UI.keepScroll = true; render(); },
+  rvSubmit(){ UI.keepScroll = true; submitReview(UI.run ? UI.run.day : S.day); },
   qAns(el){ qsetAnswer(el.dataset.qs, {o:+el.dataset.o}); render(); },
   qNum(el){ qsetAnswer(el.dataset.qs, {v:($("#qnum") || {}).value || ""}); render(); },
   qFree(el){ const id = el.dataset.qs; const st = UI.qset[id]; const it = st.items[st.i]; const txt = ($("#qfree") || {}).value || ""; if(!txt.trim()){ toast("짧게라도 써 보거나 ‘모르겠어요’를 누르세요"); return; } qsetAnswer(id, {text:txt}); if(it.newsStep && UI.run){ newsRecordFor(UI.run.day).fields[it.newsStep] = txt; touch(); } render(); },
@@ -195,6 +199,8 @@ function onField(e){
   if(ds.ar !== undefined){ const A = curAssess(); if(A){ A.rewrite[ds.ar] = el.value; touch(); } return; }
   if(ds.dnote !== undefined || ds.dsrc !== undefined){ const co = activeCompany(); if(co){ co.dayNotes = co.dayNotes || {}; const n = ds.dnote || ds.dsrc; const x = co.dayNotes[n] || (co.dayNotes[n] = {}); if(ds.dnote !== undefined) x.text = el.value; else x.src = el.value; x.at = Date.now(); co.updated = Date.now(); touch(); } return; }
   if(ds.apans !== undefined){ const x = (S.applied || []).filter(a => a.key === ds.apans)[+ds.i]; if(x){ x.ans = el.value; touch(); } return; }
+  if(ds.mans !== undefined){ const [key, i] = ds.mans.split("|"); const r = (S.missions || {})[key]; if(r && !r.passed){ r.ans = r.ans || {}; r.ans[i] = el.value; touch(); } return; }
+  if(ds.rvans !== undefined){ const r = (S.reviewQ || []).find(x => x.id === ds.rvans); if(r){ r.ans = el.value; touch(); } return; }
   if(ds.rn !== undefined){ UI.realNews = UI.realNews || {}; UI.realNews[ds.rn] = el.value; return; }
   if(ds.rm !== undefined){ UI.realMkt = UI.realMkt || {}; UI.realMkt[ds.rm] = el.value; return; }
   if(ds.wfilter !== undefined){ UI.wfilter = el.value; render(); return; }
