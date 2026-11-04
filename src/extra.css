@@ -95,8 +95,9 @@ body.viewmode .nav{justify-content:flex-start}
 .mtask{margin:.8rem 0;padding-bottom:.4rem;border-bottom:1px dashed var(--line,#d8dce6)}
 .mtask .ok-t,.mtask .no-t{margin-top:.3rem;line-height:1.55}
 .gradebox{border:2px solid var(--line,#d8dce6);border-radius:.8rem;padding:.8rem 1rem;margin:.7rem 0}
-.gradebox.pass{border-color:#2e7d4f;background:#f1faf4}
-.gradebox.fail{border-color:#b3261e;background:#fdf3f2}
+.gradebox{color:var(--ink)}
+.gradebox.pass{border-color:#2e9d5f;background:rgba(46,157,95,.12)}
+.gradebox.fail{border-color:#d0453b;background:rgba(208,69,59,.12)}
 .gradebox .score{font-size:1.4rem;font-weight:800}
 .gradebox p{margin:.35rem 0;line-height:1.6}
 .linkbtn{background:none;border:0;color:var(--accent,#1f4fa3);text-decoration:underline;font:inherit;cursor:pointer;padding:0}
