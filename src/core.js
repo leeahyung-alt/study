@@ -3,6 +3,8 @@
 const CFG = Object.assign({SYNC_URL:"", LEARNER_ID:"learner", APP_NAME:"금융시장 분석가 공부방"}, window.ACADEMY_CONFIG || {});
 const D = window.ACADEMY_DATA;
 const VIEW_MODE = /(^|#|&)view\b/.test(location.hash);
+const ADMIN = (() => { const h = location.hash; try{ if(/(^|#|&)noadmin\b/.test(h)) localStorage.removeItem("fa_admin"); else if(/(^|#|&)admin\b/.test(h)) localStorage.setItem("fa_admin", "1"); return localStorage.getItem("fa_admin") === "1"; }catch(e){ return /(^|#|&)admin\b/.test(h); } })();
+window.addEventListener("hashchange", () => { if(/(^|#|&)(no)?admin\b/.test(location.hash)) location.reload(); });
 const DOMAINS = {R:"독해력",V:"어휘·시사 상식",E:"경제·금융 이해력",N:"뉴스 분석력",C:"기업분석·투자 아이디어",M:"주식·비트코인 시장 분석력",W:"논리적 글쓰기·시황 작성"};
 const DOM_ORDER = ["R","V","E","N","C","M","W"];
 const LEVEL_NAMES = ["기초 진단 단계","문장 이해 단계","정보 이해 단계","관계 연결 단계","기초 분석 단계","독립적 분석 단계","종합 분석 단계"];
