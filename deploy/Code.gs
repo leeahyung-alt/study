@@ -1,4 +1,4 @@
-// 금융 공부방 저장소 + AI(질문·평가·실전 과제) — 3판
+// 금융 공부방 저장소 + AI(질문·평가·실전 과제) — 4판
 const FOLDER = '금융공부방_기록';
 const PER_ITEM = 10;        // 질문하기: 항목마다
 const DAILY_LIMIT = 80;     // 질문하기: 하루 전체
@@ -11,7 +11,7 @@ const SYS_MISSION = '너는 90일 금융시장 분석가 과정의 과제 출제
 function doGet(e) {
   const id = clean_((e && e.parameter && e.parameter.id) || 'learner');
   const f = findName_(id + '.json');
-  return out_({ ok: true, ver: 3, id: id, data: f ? JSON.parse(f.getBlob().getDataAsString()) : null });
+  return out_({ ok: true, ver: 4, id: id, data: f ? JSON.parse(f.getBlob().getDataAsString()) : null });
 }
 
 function doPost(e) {
@@ -90,7 +90,7 @@ function claude_(system, userText, opts) {
   if (!key) return { ok: false, error: 'no_key' };
   const payload = { model: props.getProperty('MODEL') || 'claude-haiku-5-5', max_tokens: opts.max || 1200, system: system, messages: [{ role: 'user', content: userText }] };
   if (opts.search) payload.tools = [{ type: 'web_search_20250305', name: 'web_search', max_uses: opts.search, user_location: { type: 'approximate', country: 'KR', timezone: 'Asia/Seoul' } }];
-  let text = '';
+  let text = '', stop = '';
   const sources = [];
   for (let i = 0; i < 4; i++) {
     let r;
@@ -105,10 +105,11 @@ function claude_(system, userText, opts) {
       if (b.type === 'text') text += b.text;
       if (b.type === 'web_search_tool_result' && Array.isArray(b.content)) b.content.forEach(function (x) { if (x.url) sources.push({ url: x.url, title: x.title || '', age: x.page_age || '' }); });
     });
+    stop = j.stop_reason || '';
     if (j.stop_reason === 'pause_turn') { payload.messages = payload.messages.concat([{ role: 'assistant', content: j.content }]); continue; }
     break;
   }
-  return { ok: true, text: text, sources: sources };
+  return { ok: true, text: text, sources: sources, stop: stop };
 }
 
 /* ---------- 질문·평가 ---------- */
@@ -119,9 +120,9 @@ function ask_(id, body) {
   const bucket = mode === 'ask' ? 'ask' : 'grade';
   const cnt = count_(id, bucket, item, PER_ITEM, mode === 'ask' ? DAILY_LIMIT : GRADE_DAILY);
   if (!cnt.ok) return cnt;
-  const r = claude_(mode === 'ask' ? SYS_TUTOR : SYS_GRADE, '[학습 자료와 상황]\n' + ctx.slice(0, 14000) + '\n\n[요청]\n' + String(body.question || '').slice(0, 2000), { max: mode === 'ask' ? 900 : 1600 });
+  const r = claude_(mode === 'ask' ? SYS_TUTOR : SYS_GRADE, '[학습 자료와 상황]\n' + ctx.slice(0, 14000) + '\n\n[요청]\n' + String(body.question || '').slice(0, 2000), { max: mode === 'ask' ? 2500 : 3000 });
   if (!r.ok) { refund_(id, bucket, item); return { ok: false, error: r.error, detail: r.detail }; }
-  return { ok: true, answer: r.text, left: cnt.left };
+  return { ok: true, answer: r.text + (r.stop === 'max_tokens' ? '\n\n(답이 길어서 여기서 잘렸어요. 더 궁금한 부분만 다시 물어보세요.)' : ''), left: cnt.left };
 }
 
 /* ---------- 실전 과제 만들기 ---------- */
@@ -134,9 +135,10 @@ function mission_(id, body) {
   const cnt = count_(id, 'mission', null, 0, MISSION_DAILY);
   if (!cnt.ok) return cnt;
   const search = Math.max(0, Math.min(+body.search || 0, 5));
-  const r = claude_(SYS_MISSION, String(body.prompt || '').slice(0, 14000), { max: 4000, search: search });
+  const r = claude_(SYS_MISSION, String(body.prompt || '').slice(0, 14000), { max: 8000, search: search });
   if (!r.ok) { refund_(id, 'mission', null); return { ok: false, error: r.error, detail: r.detail }; }
-  const m = parseJson_(r.text);
+  let m = parseJson_(r.text);
+  if (!m) { const fix = claude_('너는 JSON 교정기다. 받은 글을 올바른 JSON 하나로 고쳐 JSON만 출력한다. 내용은 바꾸지 않는다. 문자열 안의 큰따옴표는 작은따옴표로 바꾼다.', r.text.slice(0, 20000), { max: 8000 }); if (fix.ok) m = parseJson_(fix.text); }
   if (!m || !Array.isArray(m.tasks) || !m.tasks.length) { refund_(id, 'mission', null); return { ok: false, error: 'parse', detail: r.text.slice(0, 300) }; }
   m.searched = r.sources.slice(0, 15);
   m.madeAt = new Date().toISOString();
@@ -144,9 +146,13 @@ function mission_(id, body) {
   return { ok: true, mission: m };
 }
 function parseJson_(t) {
+  t = String(t || '').replace(/```(?:json)?/g, '');
   const a = t.indexOf('{'), b = t.lastIndexOf('}');
   if (a < 0 || b <= a) return null;
-  try { return JSON.parse(t.slice(a, b + 1)); } catch (e) { return null; }
+  let s = t.slice(a, b + 1);
+  try { return JSON.parse(s); } catch (e) {}
+  s = s.replace(/,\s*([}\]])/g, '$1').replace(/\r?\n/g, ' ');
+  try { return JSON.parse(s); } catch (e) { return null; }
 }
 
 /* ---------- 드라이브 ---------- */
