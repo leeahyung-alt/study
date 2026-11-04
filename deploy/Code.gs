@@ -1,4 +1,4 @@
-// 금융 공부방 저장소 + AI(질문·평가·실전 과제) — 4판
+// 금융 공부방 저장소 + AI(질문·평가·실전 과제) — 5판
 const FOLDER = '금융공부방_기록';
 const PER_ITEM = 10;        // 질문하기: 항목마다
 const DAILY_LIMIT = 80;     // 질문하기: 하루 전체
@@ -11,7 +11,7 @@ const SYS_MISSION = '너는 90일 금융시장 분석가 과정의 과제 출제
 function doGet(e) {
   const id = clean_((e && e.parameter && e.parameter.id) || 'learner');
   const f = findName_(id + '.json');
-  return out_({ ok: true, ver: 4, id: id, data: f ? JSON.parse(f.getBlob().getDataAsString()) : null });
+  return out_({ ok: true, ver: 5, id: id, data: f ? JSON.parse(f.getBlob().getDataAsString()) : null });
 }
 
 function doPost(e) {
@@ -107,6 +107,7 @@ function claude_(system, userText, opts) {
     });
     stop = j.stop_reason || '';
     if (j.stop_reason === 'pause_turn') { payload.messages = payload.messages.concat([{ role: 'assistant', content: j.content }]); continue; }
+    if (j.stop_reason === 'max_tokens' && !opts.search && i < 3) { payload.messages = [payload.messages[0], { role: 'assistant', content: text }, { role: 'user', content: '앞의 답이 중간에 끊겼다. 끊긴 바로 그 지점부터 이어서 끝까지 써라. 앞 내용을 되풀이하지 마라.' }]; continue; }
     break;
   }
   return { ok: true, text: text, sources: sources, stop: stop };
@@ -120,9 +121,9 @@ function ask_(id, body) {
   const bucket = mode === 'ask' ? 'ask' : 'grade';
   const cnt = count_(id, bucket, item, PER_ITEM, mode === 'ask' ? DAILY_LIMIT : GRADE_DAILY);
   if (!cnt.ok) return cnt;
-  const r = claude_(mode === 'ask' ? SYS_TUTOR : SYS_GRADE, '[학습 자료와 상황]\n' + ctx.slice(0, 14000) + '\n\n[요청]\n' + String(body.question || '').slice(0, 2000), { max: mode === 'ask' ? 2500 : 3000 });
+  const r = claude_(mode === 'ask' ? SYS_TUTOR : SYS_GRADE, '[학습 자료와 상황]\n' + ctx.slice(0, 14000) + '\n\n[요청]\n' + String(body.question || '').slice(0, 2000), { max: 8000 });
   if (!r.ok) { refund_(id, bucket, item); return { ok: false, error: r.error, detail: r.detail }; }
-  return { ok: true, answer: r.text + (r.stop === 'max_tokens' ? '\n\n(답이 길어서 여기서 잘렸어요. 더 궁금한 부분만 다시 물어보세요.)' : ''), left: cnt.left };
+  return { ok: true, answer: r.text + (r.stop === 'max_tokens' ? '\n\n(답이 아주 길어 일부가 빠졌을 수 있어요.)' : ''), left: cnt.left };
 }
 
 /* ---------- 실전 과제 만들기 ---------- */

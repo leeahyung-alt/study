@@ -103,3 +103,4 @@ body.viewmode .nav{justify-content:flex-start}
 .center{text-align:center}
 .mq{line-height:1.6;white-space:normal;word-break:keep-all;overflow-wrap:anywhere}
 .mw{display:block;font-weight:400;font-size:.9rem;line-height:1.55;color:var(--ink);background:var(--paper,#f4f6fb);border-radius:6px;padding:.25rem .5rem;margin-top:.2rem}
+.modal .ai-out{max-height:none;overflow:visible;line-height:1.65}.modal{-webkit-overflow-scrolling:touch;overscroll-behavior:contain}

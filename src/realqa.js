@@ -203,7 +203,8 @@ async function askSend(){
   S.qa.push({key:k.key, label:k.label, day:S.day, q, a:j.answer, at:Date.now()});
   touch();
   out.textContent = j.answer + `\n\n(이 항목 질문 ${j.left}번 남음)`;
-  if(ta) ta.value = "";
+  if(ta){ ta.value = ""; ta.blur(); }
+  setTimeout(() => out.scrollIntoView({behavior:"smooth", block:"start"}), 60);
   if(j.left <= 0 && okBtn) okBtn.disabled = true;
 }
 function recQA(){
