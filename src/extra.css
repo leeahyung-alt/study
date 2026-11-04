@@ -101,3 +101,4 @@ body.viewmode .nav{justify-content:flex-start}
 .gradebox p{margin:.35rem 0;line-height:1.6}
 .linkbtn{background:none;border:0;color:var(--accent,#1f4fa3);text-decoration:underline;font:inherit;cursor:pointer;padding:0}
 .center{text-align:center}
+.mq{line-height:1.6;white-space:normal;word-break:keep-all;overflow-wrap:anywhere}
