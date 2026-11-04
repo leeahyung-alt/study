@@ -20,5 +20,5 @@ Apps Script 편집기 → 왼쪽 톱니바퀴(프로젝트 설정) → 스크립
 
 ## 질문하기와 AI 첨삭 (Claude API)
 - 학습 중 ‘막혔어요: 질문하기’, 서술형 답의 ‘AI 첨삭 받기’, 교시 마무리의 ‘응용 문제 받기’는 Apps Script가 Claude API를 호출해 답합니다.
-- 항목마다 3번, 하루 전체 80번까지 허용됩니다(Apps Script 코드의 PER_ITEM, DAILY_LIMIT에서 바꿀 수 있음). 횟수는 형님 드라이브의 `learner_qa_counts.json`에 기록됩니다.
+- 항목마다 10번, 하루 전체 80번까지 허용됩니다(Apps Script 코드의 PER_ITEM, DAILY_LIMIT에서 바꿀 수 있음). 횟수는 형님 드라이브의 `learner_qa_counts.json`에 기록됩니다.
 - API 키는 Apps Script ‘스크립트 속성’의 `ANTHROPIC_API_KEY`에만 보관되고 웹 페이지에는 들어가지 않습니다. 모델은 속성 `MODEL`로 바꿀 수 있습니다(기본 claude-haiku-5-5).

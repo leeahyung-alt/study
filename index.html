@@ -3149,8 +3149,8 @@ function stepRealDart(){
   <p class="small muted">답은 ‘기록 → 기업분석’의 ${esc(co.name)} 노트에 날짜별로 쌓여요. 못 찾겠으면 아래 ‘질문하기’를 누르세요. <button class="btn small ghost" data-act="changeCompany">기업 바꾸기<\/button><\/p>`;
 }
 
-/* ================= 질문하기 (Claude API, 항목별 3번) ================= */
-const QA_LIMIT = 3;
+/* ================= 질문하기 (Claude API, 항목별 10번) ================= */
+const QA_LIMIT = 10;
 function qaEnabled(){ return Sync.enabled; }
 function qaKeyAndContext(){
   if(UI.view === "wb"){ const w = WB.context ? WB.context() : null; return w ? {key:w.key, ctx:w.text, label:"기업분석 워크북"} : null; }
@@ -3181,7 +3181,7 @@ function qaKeyAndContext(){
   if(s.id === "creal"){ const g = REAL_DART[r.day]; const co = activeCompany(); if(g) lines.push(`[실제 사업보고서 과제] 기업: ${co ? co.name : "(미정)"} / 볼 곳: ${g[0]} / 찾을 것: ${g[1]} / 질문: ${g[2]}`); }
   return {key, ctx:lines.join("\n").slice(0, 7800), label:s.title};
 }
-function qaLeft(key){ const v = (S.qaLeft || {})[key]; return v === undefined ? QA_LIMIT : v; }
+function qaLeft(key){ if(S.qaLim !== QA_LIMIT){ S.qaLeft = {}; S.qaLim = QA_LIMIT; } const v = (S.qaLeft || {})[key]; return v === undefined ? QA_LIMIT : v; }
 function qaButton(){
   if(!qaEnabled()) return "";
   const k = qaKeyAndContext(); if(!k) return "";
@@ -3203,7 +3203,7 @@ async function askSend(){
   const k = UI.qaPending; const ta = $("#qaIn"); const out = $("#qaOut"); const okBtn = $("[data-act=modalOk]");
   const q = (ta && ta.value || "").trim();
   if(!q){ toast("질문을 써 주세요"); return; }
-  if(qaLeft(k.key) <= 0){ toast("이 항목의 질문 3번을 모두 썼어요"); return; }
+  if(qaLeft(k.key) <= 0){ toast("이 항목의 질문 "+QA_LIMIT+"번을 모두 썼어요"); return; }
   const pin = await getPin();
   out.hidden = false; out.textContent = "생각하는 중이에요… (10~30초)"; if(okBtn) okBtn.disabled = true;
   let j;
@@ -3215,7 +3215,7 @@ async function askSend(){
   S.qaLeft = S.qaLeft || {};
   if(j.left !== undefined) S.qaLeft[k.key] = j.left;
   if(!j.ok){
-    const msg = {item_limit:"이 항목의 질문 3번을 모두 썼어요. 해설과 쉬운 설명을 다시 읽어 보거나, 다음 활동으로 넘어가세요.", day_limit:"오늘 질문할 수 있는 전체 횟수를 다 썼어요. 내일 다시 물어볼 수 있어요.", no_key:"질문 기능이 아직 준비되지 않았어요. 관리자(형)에게 알려 주세요.", pin:"비밀번호 확인이 필요해요. 설정에서 비밀번호를 다시 입력해 주세요.", api:"답변 서비스에 잠시 문제가 있어요. 조금 뒤 다시 시도하세요. (이번 질문은 횟수에서 빼지 않았어요)", net:"인터넷 연결을 확인해 주세요."}[j.error] || "질문을 보내지 못했어요.";
+    const msg = {item_limit:"이 항목의 질문 10번을 모두 썼어요. 해설과 쉬운 설명을 다시 읽어 보거나, 다음 활동으로 넘어가세요.", day_limit:"오늘 질문할 수 있는 전체 횟수를 다 썼어요. 내일 다시 물어볼 수 있어요.", no_key:"질문 기능이 아직 준비되지 않았어요. 관리자(형)에게 알려 주세요.", pin:"비밀번호 확인이 필요해요. 설정에서 비밀번호를 다시 입력해 주세요.", api:"답변 서비스에 잠시 문제가 있어요. 조금 뒤 다시 시도하세요. (이번 질문은 횟수에서 빼지 않았어요)", net:"인터넷 연결을 확인해 주세요."}[j.error] || "질문을 보내지 못했어요.";
     if(j.error === "item_limit") S.qaLeft[k.key] = 0;
     out.textContent = msg; touch(); return;
   }
@@ -3282,7 +3282,7 @@ async function aiAsk(item, context, question){
     const j = await r.json(); S.qaLeft = S.qaLeft || {}; if(j.left !== undefined) S.qaLeft[item] = j.left; if(j.error === "item_limit") S.qaLeft[item] = 0; touch(); return j;
   }catch(e){ return {ok:false, error:"net"}; }
 }
-function aiErrMsg(e){ return {item_limit:"이 항목은 3번을 모두 썼어요.", day_limit:"오늘 전체 횟수를 다 썼어요. 내일 다시 할 수 있어요.", no_key:"AI 기능이 아직 준비되지 않았어요. 관리자(형)에게 알려 주세요.", pin:"비밀번호 확인이 필요해요(설정 → 비밀번호 입력).", api:"AI 서비스에 잠시 문제가 있어요. 조금 뒤 다시 해 보세요(횟수는 빠지지 않았어요).", net:"인터넷 연결을 확인해 주세요."}[e] || "보내지 못했어요."; }
+function aiErrMsg(e){ return {item_limit:"이 항목은 10번을 모두 썼어요.", day_limit:"오늘 전체 횟수를 다 썼어요. 내일 다시 할 수 있어요.", no_key:"AI 기능이 아직 준비되지 않았어요. 관리자(형)에게 알려 주세요.", pin:"비밀번호 확인이 필요해요(설정 → 비밀번호 입력).", api:"AI 서비스에 잠시 문제가 있어요. 조금 뒤 다시 해 보세요(횟수는 빠지지 않았어요).", net:"인터넷 연결을 확인해 주세요."}[e] || "보내지 못했어요."; }
 const EVAL_INFO = {};
 function evalBox(evKey, info){
   if(!qaEnabled()) return "";
